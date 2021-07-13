@@ -65,15 +65,12 @@ public class UserDaoJDBCImpl implements UserDao {
         } catch (SQLException t) {
             t.printStackTrace();
             connection.rollback();
-        } finally {
-            connection.setAutoCommit(true);
         }
     }
 
     @Override
     public void removeUserById(long id) throws SQLException {
         String sqlRemoveUserById = "DELETE FROM `myfirstdb`.`users` WHERE (`id` = ?);";
-        connection.setAutoCommit(false);
 
         try (PreparedStatement ps = connection.prepareStatement(sqlRemoveUserById)) {
 
@@ -84,8 +81,6 @@ public class UserDaoJDBCImpl implements UserDao {
         } catch (SQLException t) {
             t.printStackTrace();
             connection.rollback();
-        } finally {
-            connection.setAutoCommit(true);
         }
     }
 
@@ -93,7 +88,6 @@ public class UserDaoJDBCImpl implements UserDao {
     public List<User> getAllUsers() throws SQLException {
         String sqlGetAllUsers = "SELECT * FROM myfirstdb.users;";
         List<User> userList = new ArrayList<>();
-        connection.setAutoCommit(false);
 
         try (Statement st = connection.createStatement();
              ResultSet resultSet = st.executeQuery(sqlGetAllUsers)) {
@@ -114,8 +108,6 @@ public class UserDaoJDBCImpl implements UserDao {
             th.printStackTrace();
             connection.rollback();
 
-        } finally {
-            connection.setAutoCommit(true);
         }
         return userList;
     }
@@ -123,7 +115,6 @@ public class UserDaoJDBCImpl implements UserDao {
     @Override
     public void cleanUsersTable() throws SQLException {
         String sqlCleanUsersTable = "TRUNCATE `myfirstdb`.`users`;";
-        connection.setAutoCommit(false);
 
         try (Statement st = connection.createStatement()) {
             st.executeUpdate(sqlCleanUsersTable);
@@ -131,8 +122,6 @@ public class UserDaoJDBCImpl implements UserDao {
         } catch (SQLException th) {
             th.printStackTrace();
             connection.rollback();
-        } finally {
-            connection.setAutoCommit(true);
         }
     }
 }
