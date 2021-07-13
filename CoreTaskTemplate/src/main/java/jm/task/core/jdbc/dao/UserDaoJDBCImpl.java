@@ -9,6 +9,8 @@ import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
 
+    private Connection connection = Util.getConnection();
+
     public UserDaoJDBCImpl() {
     }
 
@@ -23,10 +25,11 @@ public class UserDaoJDBCImpl implements UserDao {
                 "    ENGINE = InnoDB\n" +
                 "    DEFAULT CHARACTER SET = utf8;";
 
-        try (Connection connection = Util.getConnection(); Statement statement = connection.createStatement()) {
+        try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sqlCreateTable);
-        } catch (SQLException t) {
-            t.printStackTrace();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -35,8 +38,7 @@ public class UserDaoJDBCImpl implements UserDao {
     public void dropUsersTable() {
         String sqlDropTable = "DROP TABLE IF EXISTS`myfirstdb`.`users`;";
 
-        try (Connection connection = Util.getConnection();
-             Statement statement = connection.createStatement()) {
+        try (Statement statement = connection.createStatement()) {
 
             statement.executeUpdate(sqlDropTable);
         } catch (SQLException t) {
@@ -45,48 +47,57 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void saveUser(String name, String lastName, byte age) {
+    public void saveUser(String name, String lastName, byte age) throws SQLException {
         String sqlSaveUser = "INSERT INTO `myfirstdb`.`users` (`name`, `lastName`, `age`) VALUES (?, ?, ?);";
+        connection.setAutoCommit(false);
 
-        try (Connection connection = Util.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sqlSaveUser)) {
+        try (PreparedStatement ps = connection.prepareStatement(sqlSaveUser)) {
+
 
             ps.setString(1, name);
             ps.setString(2, lastName);
             ps.setByte(3, age);
-
             ps.executeUpdate();
+
             System.out.println("User с именем – " + name + " добавлен в базу данных");
+            connection.commit();
+
         } catch (SQLException t) {
             t.printStackTrace();
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 
     @Override
-    public void removeUserById(long id) {
-
+    public void removeUserById(long id) throws SQLException {
         String sqlRemoveUserById = "DELETE FROM `myfirstdb`.`users` WHERE (`id` = ?);";
+        connection.setAutoCommit(false);
 
-        try (Connection connection = Util.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sqlRemoveUserById)) {
+        try (PreparedStatement ps = connection.prepareStatement(sqlRemoveUserById)) {
 
             ps.setInt(1, (int) id);
-
             ps.executeUpdate();
+            connection.commit();
+
         } catch (SQLException t) {
             t.printStackTrace();
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 
     @Override
-    public List<User> getAllUsers() {
+    public List<User> getAllUsers() throws SQLException {
         String sqlGetAllUsers = "SELECT * FROM myfirstdb.users;";
         List<User> userList = new ArrayList<>();
+        connection.setAutoCommit(false);
 
-        try (Connection connection = Util.getConnection();
-             Statement st = connection.createStatement()) {
+        try (Statement st = connection.createStatement();
+             ResultSet resultSet = st.executeQuery(sqlGetAllUsers)) {
 
-            ResultSet resultSet = st.executeQuery(sqlGetAllUsers);
             while (resultSet.next()) {
                 User user = new User();
 
@@ -97,22 +108,31 @@ public class UserDaoJDBCImpl implements UserDao {
 
                 userList.add(user);
             }
+            connection.commit();
+
         } catch (SQLException th) {
             th.printStackTrace();
+            connection.rollback();
+
+        } finally {
+            connection.setAutoCommit(true);
         }
         return userList;
     }
 
     @Override
-    public void cleanUsersTable() {
+    public void cleanUsersTable() throws SQLException {
         String sqlCleanUsersTable = "TRUNCATE `myfirstdb`.`users`;";
+        connection.setAutoCommit(false);
 
-        try (Connection connection = Util.getConnection();
-             Statement st = connection.createStatement()) {
-
+        try (Statement st = connection.createStatement()) {
             st.executeUpdate(sqlCleanUsersTable);
+
         } catch (SQLException th) {
             th.printStackTrace();
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 }
